@@ -4,6 +4,7 @@ dotenv.config();
 import connectToDatabase from "./config/db.ts";
 import cors from "cors";
 import userRoute from "./routes/userRoute.ts";
+import authRoute from "./routes/authRoute.ts";
 
 const app = express();
 app.use(cors());
@@ -13,6 +14,7 @@ app.get("/", (req, res) => {
 });
 
 app.use("/api/users", userRoute);
+app.use("/api/auth", authRoute);
 
 app.listen(process.env.PORT || 3000, async () => {
   await connectToDatabase();

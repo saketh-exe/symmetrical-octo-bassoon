@@ -38,3 +38,4 @@ export async function addUser(req: Request, res: Response) {
       .json({ message: "Error adding user", error: (e as Error).message });
   }
 }
+

@@ -4,11 +4,14 @@ import type { Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import memoryStore from "../config/memoryStore.ts";
 import crypto from "crypto";
+import logger from "../utils/logger.ts";
 
 const JWT_SECRET = process.env.JWT_SECRET as string;
 
 interface CustomRequest extends Request {
   user?: string;
+  token?: string;
+  sessionId?: string;
 }
 
 export async function register(req: Request, res: Response) {
@@ -37,6 +40,7 @@ export async function register(req: Request, res: Response) {
     });
     return res.status(200).json({ message: "User created successfully!!!" });
   } catch (e) {
+    logger.error(`Error in register function: ${(e as Error).message}`);
     return res.status(500).json({
       message: "Error checking existing user",
       error: (e as Error).message,
@@ -72,6 +76,7 @@ export async function login(req: Request, res: Response) {
       return res.status(400).json({ message: "Invalid password" });
     }
   } catch (e: unknown) {
+    logger.error(`Error in login function: ${(e as Error).message}`);
     return res.status(500).json({
       message: "Internal Server Error, please try again later ",
       error: (e as Error).message,
@@ -123,15 +128,28 @@ export async function profile(req: CustomRequest, res: Response) {
       },
     });
   } catch (e) {
+    logger.error(`Error in profile function: ${(e as Error).message}`);
     return res.status(500).json({
       message: "Error retrieving profile",
       error: (e as Error).message,
     });
   }
 }
-export async function logout(req: Request, res: Response) {
-  // TO DO: Implement user logout
-  res.status(501).json({ message: "Not implemented yet" });
+export async function logout(req: CustomRequest, res: Response) {
+  const { sessionId, token } = req;
+  logger.info(
+    `Logout request - sessionId: ${sessionId ? "present" : "none"}, token: ${
+      token ? "present" : "none"
+    }`
+  );
+  if (sessionId) {
+    memoryStore.delete(sessionId);
+    res.clearCookie("sessionId");
+  }
+  if (token) {
+    res.clearCookie("token");
+  }
+  res.send({ message: "Logged out successfully" });
 }
 
 function createToken(email: string) {
@@ -143,13 +161,13 @@ export function tokenTest(req: Request, res: Response) {
   const { cookie } = req.headers;
   if (!cookie) return res.status(401).json({ message: "No cookie found" });
   const cookies = cookie?.split(";");
-  console.log(cookies);
+  logger.info(`Testing cookies: ${cookies}`);
   for (const c of cookies) {
     const [name, value] = c.trim().split("=");
     if (name === "sessionId") {
       const email = memoryStore.get(value as string);
-      if (!email) console.log("No session found");
-      else console.log("Session found for email:", email);
+      if (!email) logger.info("No session found");
+      else logger.info(`Session found for email: ${email}`);
     }
     if (name === "token") {
       try {
@@ -158,9 +176,9 @@ export function tokenTest(req: Request, res: Response) {
           iat: number;
           exp: number;
         };
-        console.log("Token valid for email:", decoded.email);
+        logger.info(`Token valid for email: ${decoded.email}`);
       } catch (e) {
-        console.log(e);
+        logger.error(`Invalid token in testToken: ${(e as Error).message}`);
         return res.status(401).json({ message: "Invalid token" });
       }
     }

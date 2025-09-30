@@ -13,7 +13,7 @@ const router = Router();
 router.post("/register", register);
 router.post("/login", login);
 router.post("/login-session", loginSession);
-router.post("/logout", logout);
+router.post("/logout", cookieAuthMiddleware, logout);
 router.get("/profile", cookieAuthMiddleware, profile);
 router.get("/token-test", tokenTest);
 export default router;

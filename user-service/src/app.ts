@@ -5,14 +5,15 @@ import connectToDatabase from "./config/db.ts";
 import userRoute from "./routes/userRoute.ts";
 import authRoute from "./routes/authRoute.ts";
 import cookieParser from "cookie-parser";
-
+import { logRequests } from "./middlewares/logger.ts";
+import logger from "./utils/logger.ts";
 dotenv.config();
+
 const app = express();
 app.use(cors());
 app.use(express.json());
 app.use(cookieParser());
-
-
+app.use(logRequests);
 
 app.get("/", (req, res) => {
   res.send("User Service is running");
@@ -23,5 +24,5 @@ app.use("/api/auth", authRoute);
 
 app.listen(process.env.PORT || 3000, async () => {
   await connectToDatabase();
-  console.log(`User Service is running on port ${process.env.PORT || 3000}`);
+  logger.info(`User Service is running on port ${process.env.PORT || 3000}`);
 });

@@ -1,4 +1,6 @@
 import User from "../models/user.ts";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import Course from "../models/Course.ts";
 import bcrypt from "bcrypt";
 import type { Request, Response } from "express";
 import jwt from "jsonwebtoken";
@@ -33,11 +35,10 @@ export async function register(req: Request, res: Response) {
     await user.save();
     const token = createToken(user.email);
     res.cookie("token", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-      maxAge: 30 * 60 * 1000,
-    });
+        httpOnly: true,
+        sameSite: "lax",
+        maxAge: 30 * 60 * 1000,
+      });
     return res.status(200).json({ message: "User created successfully!!!" });
   } catch (e) {
     logger.error(`Error in register function: ${(e as Error).message}`);
@@ -67,11 +68,12 @@ export async function login(req: Request, res: Response) {
       const token = createToken(user.email);
       res.cookie("token", token, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "strict",
+        sameSite: "lax",
         maxAge: 30 * 60 * 1000,
       });
-      return res.status(200).json({ message: "Login successful" });
+      return res.status(200).json({ message: "Login successful" ,user:{
+        role: user.role
+      }});
     } else {
       return res.status(400).json({ message: "Invalid password" });
     }
